@@ -1,121 +1,98 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
+import { useEventStreamContext } from './context/useEventStreamContext'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const stream = useEventStreamContext()
+  const records = Array.from(stream.metadata.entries())
+  const pendingCount = stream.pendingTransactionHashes.size
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+    <main className="shell">
+      <header>
+        <p className="eyebrow">Stellar Journey to Mastery · Level 3</p>
+        <h1>Transaction History Viewer</h1>
+        <p className="subtitle">Live Soroban metadata events via Stellar RPC polling</p>
+      </header>
+
+      {stream.configurationError && (
+        <section className="notice warning" role="alert">
+          <strong>Event stream not configured</strong>
+          <span>{stream.configurationError}</span>
+        </section>
+      )}
+
+      {pendingCount > 0 && (
+        <section className="notice pending" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          <strong>
+            {pendingCount} transaction{pendingCount === 1 ? '' : 's'} pending
+          </strong>
+          <span>Waiting for confirmation events…</span>
+        </section>
+      )}
+
+      <section className="grid" aria-label="Event stream status">
+        <article className="card">
+          <span className="label">Connection</span>
+          <strong className={`status ${stream.connectionState}`}>
+            {stream.connectionState}
+          </strong>
+          {stream.retryDelayMs && (
+            <small>Retrying in {Math.ceil(stream.retryDelayMs / 1000)} seconds</small>
+          )}
+        </article>
+
+        <article className="card">
+          <span className="label">Registry status</span>
+          <strong>{stream.registry?.status ?? 'Unknown'}</strong>
+          <small className="truncate">
+            {stream.registry?.defaultContractId ?? 'No default contract loaded'}
+          </small>
+        </article>
+
+        <article className="card">
+          <span className="label">Synchronized records</span>
+          <strong>{records.length}</strong>
+          <small>Refreshed from authoritative contract reads</small>
+        </article>
       </section>
 
-      <div className="ticks"></div>
+      {stream.error && (
+        <section className="notice error" role="alert">
+          <strong>Stream error</strong>
+          <span>{stream.error}</span>
+        </section>
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <section className="records">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Owner metadata</p>
+            <h2>Live records</h2>
+          </div>
+          {stream.lastEvent && <span>Ledger {stream.lastEvent.ledger}</span>}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
+
+        {records.length === 0 ? (
+          <p className="empty">No metadata events have been processed in this session.</p>
+        ) : (
           <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
+            {records.map(([transactionHash, metadata]) => (
+              <li key={transactionHash}>
+                <code>{transactionHash}</code>
+                <div className="badges">
+                  {metadata.favorite && <span>Favorite</span>}
+                  {metadata.tags.map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+                <p>{metadata.note ?? 'No personal note'}</p>
+              </li>
+            ))}
           </ul>
-        </div>
+        )}
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
