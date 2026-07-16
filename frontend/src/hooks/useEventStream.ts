@@ -59,22 +59,72 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
     const server = createRpcServer(config.rpcUrl)
 
     const refreshRegistry = async () => {
-      setRegistry(await readRegistrySnapshot(server, config))
+      const snapshot = await readRegistrySnapshot(server, config)
+      console.debug('[useEventStream] Registry state refreshed', snapshot)
+      setRegistry(snapshot)
     }
 
     const processEvent = async (event: DecodedContractEvent) => {
+      console.debug('[useEventStream] Filter candidate', {
+        eventId: event.id,
+        topicName: event.name,
+        actualContractId: event.contractId,
+        metadataContractId: config.metadataContractId,
+        registryContractId: config.registryContractId,
+        eventOwner: event.owner ?? null,
+        configuredOwner: config.ownerAddress ?? null,
+      })
+
+      const expectedContractId = event.name.startsWith('metadata_')
+        ? config.metadataContractId
+        : config.registryContractId
+      if (event.contractId !== expectedContractId) {
+        console.debug('[useEventStream] Discarded event: contract ID mismatch', {
+          eventId: event.id,
+          actualContractId: event.contractId,
+          expectedContractId,
+        })
+        return
+      }
+
       setLastEvent(event)
       clearTransactionPending(event.txHash)
 
       if (event.name === 'contract_registered' || event.name === 'contract_status_changed') {
+        console.debug('[useEventStream] Registry event accepted', {
+          eventId: event.id,
+          topicName: event.name,
+        })
         await refreshRegistry()
         return
       }
 
-      if (!config.ownerAddress || event.owner !== config.ownerAddress) return
-      if (!event.transactionHash) return
+      if (!config.ownerAddress) {
+        console.debug('[useEventStream] Discarded metadata event: owner is not configured', {
+          eventId: event.id,
+        })
+        return
+      }
+      if (event.owner !== config.ownerAddress) {
+        console.debug('[useEventStream] Discarded metadata event: owner mismatch', {
+          eventId: event.id,
+          eventOwner: event.owner ?? null,
+          configuredOwner: config.ownerAddress,
+        })
+        return
+      }
+      if (!event.transactionHash) {
+        console.debug('[useEventStream] Discarded metadata event: transaction hash missing', {
+          eventId: event.id,
+        })
+        return
+      }
 
       if (event.name === 'metadata_deleted') {
+        console.debug('[useEventStream] Metadata delete event accepted', {
+          eventId: event.id,
+          transactionHash: event.transactionHash,
+        })
         setMetadata((current) => {
           const next = new Map(current)
           next.delete(event.transactionHash!)
@@ -89,6 +139,12 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
         config.ownerAddress,
         event.transactionHash,
       )
+      console.debug('[useEventStream] Metadata save/update event accepted', {
+        eventId: event.id,
+        topicName: event.name,
+        transactionHash: event.transactionHash,
+        record,
+      })
       setMetadata((current) => new Map(current).set(event.transactionHash!, record))
     }
 

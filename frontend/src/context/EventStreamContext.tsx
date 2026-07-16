@@ -5,6 +5,15 @@ import { EventStreamContext } from './useEventStreamContext'
 
 export function EventStreamProvider({ children }: PropsWithChildren) {
   const { config, error } = useMemo(readConfiguration, [])
+  console.debug('[EventStreamContext] Event stream configuration', {
+    configured: Boolean(config),
+    rpcUrl: config?.rpcUrl ?? null,
+    metadataContractId: config?.metadataContractId ?? null,
+    registryContractId: config?.registryContractId ?? null,
+    ownerAddress: config?.ownerAddress ?? null,
+    startLedger: config?.startLedger ?? null,
+    configurationError: error,
+  })
   const stream = useEventStream(config)
 
   return (

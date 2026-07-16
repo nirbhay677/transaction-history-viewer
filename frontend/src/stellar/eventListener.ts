@@ -42,13 +42,36 @@ export async function listenForContractEvents(
     try {
       startLedger ??= await getInitialLedger(server)
       const page = await getEventPage(server, config, cursor, startLedger)
+      console.debug('[eventListener] Processing event page', {
+        eventCount: page.events.length,
+        previousCursor: cursor ?? null,
+        nextCursor: page.cursor,
+      })
 
       for (const rawEvent of page.events) {
-        if (seenIds.has(rawEvent.id)) continue
+        console.debug('[eventListener] Raw event received', {
+          eventId: rawEvent.id,
+          contractId: rawEvent.contractId?.contractId() ?? null,
+          ledger: rawEvent.ledger,
+        })
+        if (seenIds.has(rawEvent.id)) {
+          console.debug('[eventListener] Discarded event: duplicate event ID', {
+            eventId: rawEvent.id,
+          })
+          continue
+        }
         rememberEvent(rawEvent.id, seenIds, seenOrder)
 
         const event = decodeContractEvent(rawEvent)
-        if (event) await callbacks.onEvent(event)
+        if (!event) {
+          console.debug('[eventListener] Discarded event: decoder returned null', {
+            eventId: rawEvent.id,
+          })
+          continue
+        }
+
+        console.debug('[eventListener] Forwarding decoded event', event)
+        await callbacks.onEvent(event)
       }
 
       cursor = page.cursor
@@ -61,6 +84,11 @@ export async function listenForContractEvents(
       failures += 1
       const retryDelay = Math.min(1_000 * 2 ** (failures - 1), maxBackoff)
       callbacks.onStateChange('retrying')
+      console.debug('[eventListener] Poll failed; scheduling retry', {
+        failures,
+        retryDelay,
+        error: toError(reason).message,
+      })
       callbacks.onError(toError(reason), retryDelay)
       await abortableDelay(retryDelay, signal)
     }

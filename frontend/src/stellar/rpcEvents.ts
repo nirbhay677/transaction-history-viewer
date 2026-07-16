@@ -59,13 +59,21 @@ export interface RegistrySnapshot {
 
 const READ_SOURCE_ACCOUNT =
   'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
+const DEFAULT_EVENT_LOOKBACK_LEDGERS = 10_000
 
 export function createRpcServer(rpcUrl: string): rpc.Server {
   return new rpc.Server(rpcUrl, { allowHttp: rpcUrl.startsWith('http://') })
 }
 
 export async function getInitialLedger(server: rpc.Server): Promise<number> {
-  return (await server.getLatestLedger()).sequence
+  const latestLedger = (await server.getLatestLedger()).sequence
+  const initialLedger = Math.max(1, latestLedger - DEFAULT_EVENT_LOOKBACK_LEDGERS)
+  console.debug('[rpcEvents] Initial ledger selected', {
+    latestLedger,
+    initialLedger,
+    lookbackLedgers: DEFAULT_EVENT_LOOKBACK_LEDGERS,
+  })
+  return initialLedger
 }
 
 export async function getEventPage(
@@ -94,39 +102,95 @@ export async function getEventPage(
     },
   ]
 
-  return cursor
+  const request = cursor
+    ? { filters, cursor, limit: 200 as const }
+    : { filters, startLedger, limit: 200 as const }
+
+  console.debug('[rpcEvents] getEvents request', {
+    cursor: cursor ?? null,
+    startLedger: cursor ? null : startLedger,
+    metadataContractId: config.metadataContractId,
+    registryContractId: config.registryContractId,
+    filters,
+  })
+
+  const response = cursor
     ? server.getEvents({ filters, cursor, limit: 200 })
     : server.getEvents({ filters, startLedger, limit: 200 })
+
+  const page = await response
+  console.debug('[rpcEvents] Raw getEvents response', page)
+  console.debug('[rpcEvents] getEvents page summary', {
+    eventCount: page.events.length,
+    cursor: page.cursor,
+    oldestLedger: page.oldestLedger,
+    latestLedger: page.latestLedger,
+    request,
+  })
+  return page
 }
 
 export function decodeContractEvent(
   event: rpc.Api.EventResponse,
 ): DecodedContractEvent | null {
   const name = nativeString(event.topic[0])
-  if (!isSupportedEvent(name) || !event.contractId) {
+  const eventContractId = event.contractId?.contractId()
+  console.debug('[rpcEvents] Decoding event', {
+    eventId: event.id,
+    contractId: eventContractId ?? null,
+    topicName: name ?? null,
+    topicCount: event.topic.length,
+    topics: event.topic.map(debugScVal),
+  })
+
+  if (!name) {
+    console.debug('[rpcEvents] Discarded event: first topic is not a string', {
+      eventId: event.id,
+    })
+    return null
+  }
+  if (!isSupportedEvent(name)) {
+    console.debug('[rpcEvents] Discarded event: unsupported topic name', {
+      eventId: event.id,
+      topicName: name,
+    })
+    return null
+  }
+  if (!eventContractId) {
+    console.debug('[rpcEvents] Discarded event: missing contract ID', {
+      eventId: event.id,
+      topicName: name,
+    })
     return null
   }
 
-  const contractId = event.contractId.contractId()
   const owner = isMetadataEvent(name) ? nativeAddress(event.topic[1]) : undefined
   const transactionHash = isMetadataEvent(name)
     ? nativeBytes(event.topic[2])
     : undefined
 
   if (isMetadataEvent(name) && (!owner || !transactionHash)) {
+    console.debug('[rpcEvents] Discarded metadata event: required topic failed decoding', {
+      eventId: event.id,
+      topicName: name,
+      owner: owner ?? null,
+      transactionHash: transactionHash ?? null,
+    })
     return null
   }
 
-  return {
+  const decoded = {
     id: event.id,
     name,
-    contractId,
+    contractId: eventContractId,
     ledger: event.ledger,
     ledgerClosedAt: event.ledgerClosedAt,
     txHash: event.txHash,
     owner,
     transactionHash,
   }
+  console.debug('[rpcEvents] Decoded event', decoded)
+  return decoded
 }
 
 export async function readMetadata(
@@ -203,7 +267,21 @@ async function simulateRead(
 }
 
 function encodeTopic(parts: string[]): string[] {
-  return parts.map((part) => nativeToScVal(part, { type: 'symbol' }).toXDR('base64'))
+  return [
+    ...parts.map((part) =>
+      nativeToScVal(part, { type: 'symbol' }).toXDR('base64'),
+    ),
+    '**',
+  ]
+}
+
+function debugScVal(value: xdr.ScVal): unknown {
+  try {
+    const native = scValToNative(value)
+    return native instanceof Uint8Array ? nativeBytes(value) : String(native)
+  } catch (reason) {
+    return { decodeError: reason instanceof Error ? reason.message : String(reason) }
+  }
 }
 
 function nativeString(value: xdr.ScVal | undefined): string | undefined {
