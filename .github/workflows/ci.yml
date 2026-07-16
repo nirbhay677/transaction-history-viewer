@@ -1,0 +1,99 @@
+name: Continuous Integration
+
+# Validate every branch update and every pull request. This workflow only
+# installs dependencies, tests source, and builds local artifacts; it never
+# deploys contracts or publishes the frontend.
+on:
+  push:
+  pull_request:
+
+# CI only needs permission to read the checked-out repository.
+permissions:
+  contents: read
+
+# Cancel an older run for the same branch or pull request when a newer commit
+# arrives, avoiding wasted runner time while preserving runs for other refs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # lts/* follows the current supported Node.js LTS release. setup-node
+      # caches npm's download cache using the committed frontend lockfile.
+      - name: Set up Node.js LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci fails if package.json and package-lock.json disagree and always
+      # creates a clean, reproducible dependency installation.
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+  contracts:
+    name: Soroban contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: contracts
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # Install the stable Rust toolchain and Soroban's WebAssembly target.
+      # Installing the target explicitly keeps the job independent of runner
+      # image defaults.
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      # Cache Cargo registry downloads, Git dependencies, and reusable build
+      # output. The action keys the cache using Cargo.lock and the toolchain.
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts -> target
+
+      # Stellar's official action downloads an attested CLI release and adds it
+      # to PATH. The release is pinned for deterministic CI behavior.
+      - name: Install Stellar CLI
+        uses: stellar/stellar-cli@v27.0.0
+
+      # --locked prevents CI from silently selecting dependency versions that
+      # differ from the reviewed Cargo.lock file.
+      - name: Test contracts
+        run: cargo test --locked
+
+      # Build and optimize every cdylib contract in the Cargo workspace. This
+      # produces local Wasm only; no network, upload, or deploy command is used.
+      - name: Build Soroban contracts
+        run: stellar contract build --locked
