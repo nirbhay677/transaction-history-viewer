@@ -2,6 +2,7 @@
 
 mod error;
 mod events;
+mod registry;
 mod types;
 mod validation;
 
@@ -9,6 +10,7 @@ pub use error::ContractError;
 pub use types::{Metadata, MetadataInput};
 
 use events::{MetadataDeleted, MetadataSaved, MetadataUpdated};
+use registry::{MetadataRegistryClient, RegistryStorageKey};
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env};
 use types::StorageKey;
 use validation::validate_metadata;
@@ -21,6 +23,12 @@ pub struct TransactionMetadata;
 
 #[contractimpl]
 impl TransactionMetadata {
+    pub fn __constructor(env: Env, registry: Address) {
+        env.storage()
+            .instance()
+            .set(&RegistryStorageKey::Registry, &registry);
+    }
+
     pub fn save_metadata(
         env: Env,
         owner: Address,
@@ -29,6 +37,7 @@ impl TransactionMetadata {
     ) -> Result<Metadata, ContractError> {
         owner.require_auth();
         validate_metadata(&input)?;
+        assert_registry_active(&env)?;
 
         let key = StorageKey::Metadata(owner.clone(), transaction_hash.clone());
         if env.storage().persistent().has(&key) {
@@ -83,6 +92,7 @@ impl TransactionMetadata {
     ) -> Result<Metadata, ContractError> {
         owner.require_auth();
         validate_metadata(&input)?;
+        assert_registry_active(&env)?;
 
         let key = StorageKey::Metadata(owner.clone(), transaction_hash.clone());
         let existing: Metadata = env
@@ -144,6 +154,20 @@ fn extend_record_ttl(env: &Env, key: &StorageKey) {
     env.storage()
         .persistent()
         .extend_ttl(key, RECORD_TTL_THRESHOLD, RECORD_TTL_EXTEND_TO);
+}
+
+fn assert_registry_active(env: &Env) -> Result<(), ContractError> {
+    let registry: Address = env
+        .storage()
+        .instance()
+        .get(&RegistryStorageKey::Registry)
+        .ok_or(ContractError::RegistryInactive)?;
+    let current_contract = env.current_contract_address();
+
+    match MetadataRegistryClient::new(env, &registry).try_assert_active(&current_contract) {
+        Ok(Ok(())) => Ok(()),
+        _ => Err(ContractError::RegistryInactive),
+    }
 }
 
 #[cfg(test)]

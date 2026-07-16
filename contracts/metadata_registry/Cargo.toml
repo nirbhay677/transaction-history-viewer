@@ -1,5 +1,5 @@
 [package]
-name = "transaction_metadata"
+name = "metadata_registry"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -12,5 +12,4 @@ doctest = false
 soroban-sdk = { workspace = true }
 
 [dev-dependencies]
-metadata_registry = { path = "../metadata_registry" }
 soroban-sdk = { workspace = true, features = ["testutils"] }

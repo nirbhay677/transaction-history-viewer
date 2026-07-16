@@ -13,4 +13,5 @@ pub enum ContractError {
     EmptyTag = 7,
     TagTooLong = 8,
     DuplicateTag = 9,
+    RegistryInactive = 10,
 }

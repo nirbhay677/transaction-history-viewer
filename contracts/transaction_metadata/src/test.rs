@@ -1,4 +1,5 @@
 use super::*;
+use metadata_registry::{MetadataRegistry, MetadataRegistryClient};
 use soroban_sdk::{
     testutils::{Address as _, Events as _, Ledger as _},
     vec, Address, BytesN, Env, String,
@@ -8,12 +9,59 @@ fn setup() -> (Env, TransactionMetadataClient<'static>, Address, BytesN<32>) {
     let env = Env::default();
     env.mock_all_auths();
 
-    let contract_id = env.register(TransactionMetadata, ());
+    let admin = Address::generate(&env);
+    let registry_id = env.register(MetadataRegistry, ());
+    let registry = MetadataRegistryClient::new(&env, &registry_id);
+    registry.initialize(&admin);
+
+    let contract_id = env.register(TransactionMetadata, (&registry_id,));
+    registry.register_contract(&admin, &contract_id);
     let client = TransactionMetadataClient::new(&env, &contract_id);
     let owner = Address::generate(&env);
     let transaction_hash = BytesN::from_array(&env, &[7; 32]);
 
     (env, client, owner, transaction_hash)
+}
+
+#[test]
+fn registry_status_controls_writes_but_not_reads_or_deletes() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let owner = Address::generate(&env);
+    let registry_id = env.register(MetadataRegistry, ());
+    let registry = MetadataRegistryClient::new(&env, &registry_id);
+    registry.initialize(&admin);
+
+    let contract_id = env.register(TransactionMetadata, (&registry_id,));
+    let client = TransactionMetadataClient::new(&env, &contract_id);
+    let transaction_hash = BytesN::from_array(&env, &[9; 32]);
+    let input = sample_input(&env);
+
+    assert_eq!(
+        client.try_save_metadata(&owner, &transaction_hash, &input),
+        Err(Ok(ContractError::RegistryInactive))
+    );
+
+    registry.register_contract(&admin, &contract_id);
+    client.save_metadata(&owner, &transaction_hash, &input);
+
+    registry.set_status(
+        &admin,
+        &contract_id,
+        &metadata_registry::ContractStatus::Paused,
+    );
+    assert_eq!(
+        client.try_update_metadata(&owner, &transaction_hash, &input),
+        Err(Ok(ContractError::RegistryInactive))
+    );
+
+    assert_eq!(
+        client.get_metadata(&owner, &transaction_hash).favorite,
+        true
+    );
+    client.delete_metadata(&owner, &transaction_hash);
 }
 
 fn sample_input(env: &Env) -> MetadataInput {
