@@ -1,10 +1,19 @@
 import { useMemo, type PropsWithChildren } from 'react'
 import { useEventStream } from '../hooks/useEventStream'
 import type { EventStreamConfig } from '../stellar/rpcEvents'
+import { useFreighterWalletContext } from '../wallet/useFreighterWalletContext'
 import { EventStreamContext } from './useEventStreamContext'
 
 export function EventStreamProvider({ children }: PropsWithChildren) {
-  const { config, error } = useMemo(readConfiguration, [])
+  const wallet = useFreighterWalletContext()
+  const { config: baseConfig, error } = useMemo(readConfiguration, [])
+  const config = useMemo(
+    () =>
+      baseConfig
+        ? { ...baseConfig, ownerAddress: wallet.address ?? undefined }
+        : null,
+    [baseConfig, wallet.address],
+  )
   console.debug('[EventStreamContext] Event stream configuration', {
     configured: Boolean(config),
     rpcUrl: config?.rpcUrl ?? null,
@@ -17,7 +26,9 @@ export function EventStreamProvider({ children }: PropsWithChildren) {
   const stream = useEventStream(config)
 
   return (
-    <EventStreamContext.Provider value={{ ...stream, configurationError: error }}>
+    <EventStreamContext.Provider
+      value={{ ...stream, config, configurationError: error }}
+    >
       {children}
     </EventStreamContext.Provider>
   )
@@ -52,7 +63,6 @@ function readConfiguration(): {
       networkPassphrase,
       metadataContractId,
       registryContractId,
-      ownerAddress: import.meta.env.VITE_STELLAR_OWNER_ADDRESS?.trim() || undefined,
       startLedger,
     },
     error: null,

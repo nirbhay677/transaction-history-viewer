@@ -57,6 +57,9 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
 
     const controller = new AbortController()
     const server = createRpcServer(config.rpcUrl)
+    setMetadata(new Map())
+    setLastEvent(null)
+    setPending(new Set())
 
     const refreshRegistry = async () => {
       const snapshot = await readRegistrySnapshot(server, config)

@@ -60,18 +60,20 @@ export async function listenForContractEvents(
           })
           continue
         }
-        rememberEvent(rawEvent.id, seenIds, seenOrder)
-
         const event = decodeContractEvent(rawEvent)
         if (!event) {
           console.debug('[eventListener] Discarded event: decoder returned null', {
             eventId: rawEvent.id,
           })
+          rememberEvent(rawEvent.id, seenIds, seenOrder)
           continue
         }
 
         console.debug('[eventListener] Forwarding decoded event', event)
         await callbacks.onEvent(event)
+        // Only mark actionable events after React state/read synchronization
+        // succeeds, so transient RPC read failures are retried with this page.
+        rememberEvent(rawEvent.id, seenIds, seenOrder)
       }
 
       cursor = page.cursor

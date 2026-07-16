@@ -7,6 +7,7 @@ A Stellar Journey to Mastery Level 3 project built with Soroban smart contracts 
 - Transaction metadata management
 - Inter-contract communication
 - Real-time event streaming
+- Freighter wallet authorization and transaction signing
 - Responsive frontend
 - Error handling
 - Loading states
@@ -23,6 +24,7 @@ A Stellar Journey to Mastery Level 3 project built with Soroban smart contracts 
 - Rust
 - Soroban SDK
 - Stellar RPC
+- Freighter API
 
 ---
 
@@ -74,13 +76,23 @@ Clone the repository
 git clone https://github.com/YOUR_USERNAME/transaction-history-viewer.git
 ```
 
-Install frontend
+Install the [Freighter browser extension](https://www.freighter.app/), create or
+import an account, and switch its network to **Testnet**. Fund that Testnet
+account with test XLM through [Stellar Laboratory](https://lab.stellar.org/account/create)
+so it can pay transaction fees. Test XLM has no monetary value.
+
+Install frontend dependencies and start Vite:
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Open the local URL shown by Vite and select **Connect Freighter**. Approve the
+site access request. The connected Testnet address becomes the `owner` for
+`save_metadata`, `update_metadata`, and `delete_metadata`; Freighter requests a
+signature for every write.
 
 ---
 
@@ -93,8 +105,23 @@ VITE_STELLAR_RPC_URL=
 VITE_STELLAR_NETWORK_PASSPHRASE=
 VITE_METADATA_CONTRACT_ID=
 VITE_REGISTRY_CONTRACT_ID=
-VITE_STELLAR_OWNER_ADDRESS=
 ```
+
+Use these deployed Testnet values:
+
+```env
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+VITE_METADATA_CONTRACT_ID=CCP6ARFXQ4NLPE5BR6R377W4YOOAO4UOLFSDYEJLQ6GS5R2BG2GYYKPD
+VITE_REGISTRY_CONTRACT_ID=CAY6YHM74AWVYLOTPHQHQWVLSJXXCFX5QY4G4ZMOCQLHMMTP7LFPITGW
+```
+
+Do not put private keys or seed phrases in `.env`. Freighter keeps signing
+credentials in the extension and returns only signed transaction envelopes.
+
+If the app reports the wrong network, select Testnet in Freighter and reconnect.
+If it reports that the account was not found, fund the account with test XLM
+before retrying.
 
 ---
 

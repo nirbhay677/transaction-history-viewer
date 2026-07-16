@@ -8,7 +8,11 @@
   padding: 4rem 0;
 }
 
-header {
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
   margin-bottom: 2rem;
 }
 
@@ -41,6 +45,134 @@ h2 {
 .subtitle {
   color: #a9b6c9;
   font-size: 1.05rem;
+}
+
+button,
+input,
+select,
+textarea {
+  border: 1px solid #34435d;
+  border-radius: 0.6rem;
+  color: #edf4ff;
+  background: #0c1422;
+}
+
+button {
+  min-height: 2.7rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover:not(:disabled) {
+  border-color: #6ea1ff;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.wallet-area {
+  display: flex;
+  align-items: flex-end;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wallet-area small {
+  color: #69d9a0;
+}
+
+.wallet-button,
+.primary-button {
+  border-color: #4d78c7;
+  background: #285fb8;
+}
+
+.action-panel {
+  margin: 1rem 0;
+  padding: 1.4rem;
+  border: 1px solid #26334a;
+  border-radius: 1rem;
+  background: #111a2a;
+}
+
+.action-panel form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.action-panel label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: #a9b6c9;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.action-panel input,
+.action-panel select,
+.action-panel textarea {
+  width: 100%;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+.form-wide {
+  grid-column: 1 / -1;
+}
+
+.action-panel .checkbox-label {
+  align-items: center;
+  align-self: end;
+  flex-direction: row;
+  padding-bottom: 0.75rem;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.form-actions small {
+  color: #8d9db5;
+}
+
+.action-message {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #315a7d;
+  border-radius: 0.75rem;
+  background: #0c1422;
+}
+
+.action-message span,
+.action-message code {
+  color: #a9b6c9;
+}
+
+.action-message.success {
+  border-color: #287653;
+}
+
+.action-message.failure,
+.action-message.rejected,
+.action-message.timeout {
+  border-color: #7d3542;
 }
 
 .grid {
@@ -172,6 +304,17 @@ h2 {
   margin: 0.8rem 0 0;
 }
 
+.record-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.danger-button {
+  border-color: #7d3542;
+  color: #ffb0bc;
+}
+
 .badges {
   display: flex;
   flex-wrap: wrap;
@@ -206,6 +349,32 @@ h2 {
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .app-header {
+    flex-direction: column;
+  }
+
+  .wallet-area {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .wallet-button {
+    width: 100%;
+  }
+
+  .action-panel form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-wide {
+    grid-column: auto;
+  }
+
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .notice {
