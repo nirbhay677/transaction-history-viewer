@@ -1,92 +1,184 @@
 # Transaction History Viewer
 
-Transaction History Viewer is a Stellar Journey to Mastery Level 3 project. It will provide a clear, reliable interface for exploring transaction history on the Stellar network.
+A Stellar Journey to Mastery Level 3 project built with Soroban smart contracts and React.
 
-> **Project status:** Initial repository setup. Application features and Soroban smart contracts have not been implemented yet.
+## Features
 
-## Repository structure
+- Transaction metadata management
+- Inter-contract communication
+- Real-time event streaming
+- Responsive frontend
+- Error handling
+- Loading states
+- GitHub Actions CI/CD
+- Smart contract tests
 
-```text
-transaction-history-viewer/
-|-- .github/
-|   `-- workflows/       # Future CI/CD workflows
-|-- contracts/           # Future Soroban smart contracts (currently empty)
-|-- docs/                # Project documentation
-|-- frontend/            # React and TypeScript application powered by Vite
-|-- .gitignore
-`-- README.md
-```
+---
 
-## Technology foundation
+## Technology Stack
 
-- React 19
+- React
 - TypeScript
 - Vite
-- Oxlint
-- Soroban contracts (planned)
+- Rust
+- Soroban SDK
+- Stellar RPC
 
-## Prerequisites
+---
 
-Install the following before working with the frontend:
+## Project Structure
 
-- [Node.js](https://nodejs.org/) (a current LTS release is recommended)
-- npm (included with Node.js)
-- Git
-
-Confirm that Node.js and npm are available:
-
-```bash
-node --version
-npm --version
+```
+contracts/
+frontend/
+.github/
+README.md
 ```
 
-## Local setup
+---
 
-From the repository root, install the frontend dependencies:
+## Smart Contracts
+
+### Metadata Contract
+- Save metadata
+- Update metadata
+- Delete metadata
+- Emit events
+
+### Registry Contract
+- Register contracts
+- Pause/Resume contracts
+- Verify active status
+
+---
+
+## Event Streaming
+
+The frontend automatically listens for:
+
+- metadata_saved
+- metadata_updated
+- metadata_deleted
+- contract_registered
+- contract_status_changed
+
+and updates the UI in real time.
+
+---
+
+## Running Locally
+
+Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/transaction-history-viewer.git
+```
+
+Install frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-Start the Vite development server:
-
-```bash
 npm run dev
 ```
 
-Vite will print the local development URL in the terminal.
+---
 
-## Available frontend scripts
+## Environment Variables
 
-Run these commands from the `frontend` directory:
+Create a `.env` file:
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the local development server with hot reload |
-| `npm run build` | Type-check and create a production build |
-| `npm run lint` | Run Oxlint against the frontend source |
-| `npm run preview` | Preview the production build locally |
+```env
+VITE_STELLAR_RPC_URL=
+VITE_STELLAR_NETWORK_PASSPHRASE=
+VITE_METADATA_CONTRACT_ID=
+VITE_REGISTRY_CONTRACT_ID=
+VITE_STELLAR_OWNER_ADDRESS=
+```
 
-## Development workflow
+---
 
-1. Create a focused branch for each change.
-2. Keep commits small and descriptive.
-3. Run linting and a production build before opening a pull request.
-4. Document architectural decisions and setup changes in `docs/`.
-5. Add CI/CD definitions to `.github/workflows/` when automation is introduced.
+## Smart Contract Tests
 
-## Security
+```bash
+cargo test
+```
 
-Never commit private keys, seed phrases, API credentials, or populated environment files. Commit an `.env.example` containing placeholder values when environment configuration is introduced.
+---
 
-## Roadmap
+## Frontend Build
 
-- Design and implement the transaction-history frontend.
-- Integrate with the Stellar network.
-- Add Soroban smart contracts if required by later project stages.
-- Add automated tests and CI/CD workflows.
+```bash
+npm run build
+```
 
-## License
+---
 
-No license has been selected yet.
+## Live Demo
+
+Vercel:
+
+## Contract Addresses
+
+Metadata Contract
+
+```
+CCP6ARFXQ4NLPE5BR6R377W4YOOAO4UOLFSDYEJLQ6GS5R2BG2GYYKPD
+```
+
+Registry Contract
+
+```
+CAY6YHM74AWVYLOTPHQHQWVLSJXXCFX5QY4G4ZMOCQLHMMTP7LFPITGW
+```
+
+---
+
+## Example Transaction Hashes
+
+Save Metadata
+
+```
+7fd93c95aead09d4e8926cac36b468ac3b20c01bb278a8710969a5e156e324d1
+```
+
+Update Metadata
+
+```
+9a5995775037164fc637f8a718fabe6937c6b12103a3f7ec77a396f4fd8e1280
+```
+
+Delete Metadata
+
+```
+ead5289bcee97eb881e166ac54b75e66db468361bbac617cd7b976d4051f98da
+```
+
+Pause Contract
+
+```
+b04cc1eba5343450881bf4001b7b68f522c5c89d7d2f6eb132d4526d1b0ec9f7
+```
+
+---
+
+## Screenshots
+
+- Desktop UI
+- Mobile UI
+- GitHub Actions
+- Test Results
+
+---
+
+## Demo Video
+
+Add your YouTube video link here.
+
+---
+
+## Author
+
+Navin Kumar
+
+Stellar Journey to Mastery Level 3
