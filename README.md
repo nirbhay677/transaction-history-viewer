@@ -175,10 +175,4 @@ b04cc1eba5343450881bf4001b7b68f522c5c89d7d2f6eb132d4526d1b0ec9f7
 
 Add your YouTube video link here.
 
----
-
-## Author
-
-Navin Kumar
-
 Stellar Journey to Mastery Level 3
