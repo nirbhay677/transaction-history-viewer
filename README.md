@@ -204,7 +204,8 @@ c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
 ## Mobile UI-
 <img width="1170" height="4938" alt="transaction-history-viewer vercel app_(iPhone 12 Pro)" src="https://github.com/user-attachments/assets/2831acbd-f18b-40d6-8d86-3b5f65eb89c6" />
 
-- GitHub Actions
+- GitHub Actions-<img width="1867" height="902" alt="Screenshot 2026-07-18 002236" src="https://github.com/user-attachments/assets/1c2faf6a-fbe5-40ea-b2b7-7dec22fed937" />
+
 - Test Results-<img width="1072" height="243" alt="Screenshot 2026-07-17 024300" src="https://github.com/user-attachments/assets/f7f222ac-6bfd-42fc-a961-43eba83f8f11" />
 
 
