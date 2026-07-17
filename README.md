@@ -210,3 +210,4 @@ c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
 Add your YouTube video link here.
 
 Stellar Journey to Mastery Level 3
+Freighter wallet integration enabled.
