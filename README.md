@@ -186,8 +186,14 @@ Pause Contract
 ```
 b04cc1eba5343450881bf4001b7b68f522c5c89d7d2f6eb132d4526d1b0ec9f7
 ```
+## Latest Freighter Wallet Transaction
 
----
+Action: Save Metadata
+
+Transaction Hash:
+
+```text
+c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
 
 ## Screenshots
 
