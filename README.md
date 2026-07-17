@@ -194,10 +194,13 @@ Transaction Hash:
 
 ```text
 c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
+```
 
 ## Screenshots
 
-- Desktop UI
+### Desktop UI-
+<img width="741" height="833" alt="Screenshot 2026-07-18 003349" src="https://github.com/user-attachments/assets/5c57ae18-0350-4ea6-95cf-b4a68cbaaac6" />
+
 - Mobile UI
 - GitHub Actions
 - Test Results-<img width="1072" height="243" alt="Screenshot 2026-07-17 024300" src="https://github.com/user-attachments/assets/f7f222ac-6bfd-42fc-a961-43eba83f8f11" />
@@ -209,5 +212,5 @@ c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
 
 Add your YouTube video link here.
 
-Stellar Journey to Mastery Level 3
+
 Freighter wallet integration enabled.
