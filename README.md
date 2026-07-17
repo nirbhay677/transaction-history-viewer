@@ -211,8 +211,7 @@ c93f5e5e4fbb7db9e3c37d4ec2a3515cbd3c43d1833de4f5bc8c70157c44f65a
 ---
 
 ## Demo Video
-
-Add your YouTube video link here.
+https://drive.google.com/drive/quota
 
 
 Freighter wallet integration enabled.
