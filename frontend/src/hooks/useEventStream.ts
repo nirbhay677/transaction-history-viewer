@@ -12,6 +12,10 @@ import {
   type RegistrySnapshot,
   type TransactionMetadataRecord,
 } from '../stellar/rpcEvents'
+import {
+  applyMetadataResolution,
+  resolveMetadataEvent,
+} from '../stellar/metadataEvent'
 
 export interface EventStreamState {
   connectionState: StreamConnectionState
@@ -122,37 +126,38 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
         })
         return
       }
+      const ownerAddress = config.ownerAddress
+      const transactionHash = event.transactionHash
 
-      if (event.name === 'metadata_deleted') {
-        console.debug('[useEventStream] Metadata delete event accepted', {
+      const resolution = await resolveMetadataEvent(event, () =>
+        readMetadata(server, config, ownerAddress, transactionHash),
+      )
+
+      if (resolution.kind === 'remove') {
+        console.debug('[useEventStream] Metadata record is absent', {
           eventId: event.id,
-          transactionHash: event.transactionHash,
+          topicName: event.name,
+          transactionHash: resolution.transactionHash,
+          reason:
+            event.name === 'metadata_deleted'
+              ? 'delete event'
+              : 'stale save/update replay after deletion',
         })
-        setMetadata((current) => {
-          const next = new Map(current)
-          next.delete(event.transactionHash!)
-          return next
-        })
+        setMetadata((current) => applyMetadataResolution(current, resolution))
         return
       }
 
-      const record = await readMetadata(
-        server,
-        config,
-        config.ownerAddress,
-        event.transactionHash,
-      )
       console.debug('[useEventStream] Metadata save/update event accepted', {
         eventId: event.id,
         topicName: event.name,
-        transactionHash: event.transactionHash,
-        record,
+        transactionHash: resolution.transactionHash,
+        record: resolution.record,
       })
-      setMetadata((current) => new Map(current).set(event.transactionHash!, record))
+      setMetadata((current) => applyMetadataResolution(current, resolution))
     }
 
     void refreshRegistry().catch((reason: unknown) => {
-      setError(toMessage(reason))
+      setError(toUserFacingStreamError(reason))
     })
 
     void listenForContractEvents(
@@ -167,7 +172,7 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
           }
         },
         onError: (streamError, delay) => {
-          setError(streamError.message)
+          setError(toUserFacingStreamError(streamError))
           setRetryDelayMs(delay)
         },
       },
@@ -205,4 +210,12 @@ export function useEventStream(config: EventStreamConfig | null): EventStreamSta
 
 function toMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : String(reason)
+}
+
+function toUserFacingStreamError(reason: unknown): string {
+  const message = toMessage(reason)
+  if (/HostError|Diagnostic Event|Error\(Contract,/i.test(message)) {
+    return 'A Stellar contract read failed. The event stream will retry automatically.'
+  }
+  return message
 }
